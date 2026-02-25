@@ -2,8 +2,8 @@ import { validar } from "./helpers/validarDocumento.js";
 import { crearCardTarea } from './components/tareas.js';
 import { getTareas } from './use-case/tareas/getTareas.js';
 import { postTarea } from './use-case/tareas/postTareas.js';
-import { eliminarTarea } from './use-case/tareas/deleteTarea.js'; // Según tu imagen
-import { editarTarea } from './use-case/tareas/updateTarea.js';   // Según tu imagen
+import { eliminarTarea } from './use-case/tareas/deleteTarea.js'; 
+import { editarTarea } from './use-case/tareas/updateTarea.js';   
 
 // --- Selección de elementos ---
 const api_url = "http://localhost:3001";
@@ -17,6 +17,8 @@ const tasksContainer = document.getElementById('tasksContainer');
 const taskCountLabel = document.getElementById('taskCount');
 const emptyTasksState = document.getElementById('emptyTasks');
 const searchError = document.getElementById('searchError');
+
+const cambios = 0;
 
 // --- Estado ---
 let currentUser = null;
