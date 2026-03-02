@@ -21,23 +21,29 @@ export const crearCardTarea = (tarea) => {
     const card = document.createElement('div');
     card.classList.add('card', 'task-card');
     card.dataset.id = tarea.id;
+    
+    // Metadatos para que el main pueda filtrar/ordenar
+    card.dataset.estado = tarea.estado;
+    card.dataset.titulo = tarea.titulo.toLowerCase();
 
-    card.appendChild(crearFila('Título', tarea.titulo));
-    card.appendChild(crearFila('Descripción', tarea.descripcion));
-    card.appendChild(crearFila('Fecha Registro', tarea.fechaRegistro));
-  
+    card.appendChild(crearFila('TÍTULO', tarea.titulo));
+    card.appendChild(crearFila('DESCRIPCIÓN', tarea.descripcion));
+
+    // Usamos el nombre exacto que sale en tu consola: fecha_registro
+    card.appendChild(crearFila('FECHA REGISTRO', tarea.fecha_registro || 'Sin fecha'));
+
     const badgePrioridad = document.createElement('span');
     badgePrioridad.classList.add('priority-tag', tarea.prioridad.toLowerCase());
     badgePrioridad.textContent = tarea.prioridad.toUpperCase();
-    card.appendChild(crearFilaConElemento('Importancia', badgePrioridad));
+    card.appendChild(crearFilaConElemento('IMPORTANCIA', badgePrioridad));
 
-    card.appendChild(crearFila('Estado', tarea.estado));
+    card.appendChild(crearFila('ESTADO', tarea.estado));
 
-    card.appendChild(crearFila('Fecha', tarea.fechaRegistro));
-  
+    // BOTONES
     const acciones = document.createElement('div');
+    acciones.classList.add('task-card__actions'); 
     acciones.style.display = 'flex';
-    acciones.style.gap = '10px';
+    acciones.style.justifyContent = 'space-between';
     acciones.style.marginTop = '15px';
 
     acciones.innerHTML = `
@@ -46,7 +52,5 @@ export const crearCardTarea = (tarea) => {
     `;
 
     card.appendChild(acciones);
-      return card;
-  
-
+    return card;
 }

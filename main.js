@@ -5,6 +5,8 @@ import { postTarea } from './api/tareas/postTareas.js';
 import { eliminarTarea } from './api/tareas/deleteTarea.js';
 import { editarTarea } from './api/tareas/updateTarea.js';
 import { api_url, reglas_documento } from './config/config.js';
+import { ordenarTareas, filtrarTareas } from './ui/sortService.js';
+
 // --- Selección de elementos ---
 const searchForm = document.getElementById('searchForm');
 const taskForm = document.getElementById('taskForm');
@@ -22,7 +24,8 @@ let currentUser = null;
 let totalTasks = 0;
 let isEditing = false;
 let editTaskId = null;
-
+let currentSort = 'fecha';
+let currentFilters = { estado: 'todos', texto: '' };
 
 
 // --- Utilidades ---
@@ -57,16 +60,30 @@ function limpiarTareas() {
 }
 
 async function renderTareasUsuario(userId) {
-    const tareas = await getTareas(api_url, userId);
-    if (tareas.length === 0) {
+    const tareasOriginales = await getTareas(api_url, userId);
+    
+    // 1. Limpiar contenedor
+    const cards = tasksContainer.querySelectorAll('.task-card');
+    cards.forEach(card => card.remove());
+    totalTasks = 0;
+
+    if (tareasOriginales.length === 0) {
         showEmptyState();
+        updateMessageCount();
         return;
     }
-    tareas.forEach(tarea => {
+
+    // 2. Aplicar la logica de filtrado y ordenamiento
+    const tareasFiltradas = filtrarTareas(tareasOriginales, currentFilters);
+    const tareasFinales = ordenarTareas(tareasFiltradas, currentSort);
+
+    // 3. Renderizar resultados finales
+    tareasFinales.forEach(tarea => {
         const card = crearCardTarea(tarea);
         tasksContainer.insertBefore(card, emptyTasksState);
         totalTasks++;
     });
+
     updateMessageCount();
     hideEmptyState();
 }
@@ -167,4 +184,22 @@ tasksContainer.addEventListener('click', async (e) => {
     const id = e.target.dataset.id;
     if (e.target.classList.contains('btn-eliminar')) await processEliminar(id);
     if (e.target.classList.contains('btn-editar')) prepararEdicion(e.target.closest('.task-card'));
+});
+
+// Evento para el Ordenamiento
+document.getElementById('sortTasks')?.addEventListener('change', (e) => {
+    currentSort = e.target.value;
+    if (currentUser) renderTareasUsuario(currentUser.id);
+});
+
+// Evento para el Filtro de Estado
+document.getElementById('filterStatus')?.addEventListener('change', (e) => {
+    currentFilters.estado = e.target.value;
+    if (currentUser) renderTareasUsuario(currentUser.id);
+});
+
+// Evento para el Filtro de Texto (Combinado)
+document.getElementById('filterText')?.addEventListener('input', (e) => {
+    currentFilters.texto = e.target.value;
+    if (currentUser) renderTareasUsuario(currentUser.id);
 });
