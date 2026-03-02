@@ -45,17 +45,19 @@
         <form id="taskForm" class="form">
           <div class="form__group">
             <label for="taskTitle" class="form__label">Título de la Tarea</label>
-            <input type="text" id="taskTitle" class="form__input" placeholder="¿Qué hay que hacer?" required>
+            <input type="text" id="taskTitle" name="taskTitle" class="form__input" placeholder="¿Qué hay que hacer?">
+            <span class="form__error" id="errorTaskTitle"></span>
           </div>
           <div class="form__group">
             <label for="taskDesc" class="form__label">Descripción</label>
-            <textarea id="taskDesc" class="form__input form__textarea" placeholder="Detalles de la tarea..." rows="3"
-              required></textarea>
+            <textarea id="taskDesc" name="taskDesc" class="form__input form__textarea" placeholder="Detalles de la tarea..." rows="3"
+              ></textarea>
+            <span class="form__error" id="errorTaskDesc"></span>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form__group">
               <label for="taskStatus" class="form__label">Estado</label>
-              <select id="taskStatus" class="form__input">
+              <select id="taskStatus" name="taskStatus" class="form__input">
                 <option value="Pendiente">Pendiente</option>
                 <option value="En Progreso">En Progreso</option>
                 <option value="Completada">Completada</option>
@@ -63,7 +65,7 @@
             </div>
             <div class="form__group">
               <label for="taskPriority" class="form__label">Importancia</label>
-              <select id="taskPriority" class="form__input">
+              <select id="taskPriority" name="taskPriority" class="form__input">
                 <option value="Baja">Baja</option>
                 <option value="Media">Media</option>
                 <option value="Alta">Alta</option>

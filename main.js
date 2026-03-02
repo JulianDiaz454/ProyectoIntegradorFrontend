@@ -1,10 +1,11 @@
-import { validar } from "./service/validacionDocumento.js";
+import { validar } from "./service/validacion.js";
 import { crearCardTarea } from './ui/tareas.js';
 import { getTareas } from './api/tareas/getTareas.js';
 import { postTarea } from './api/tareas/postTareas.js';
 import { eliminarTarea } from './api/tareas/deleteTarea.js';
 import { editarTarea } from './api/tareas/updateTarea.js';
-import { api_url, reglas_documento } from './config/config.js';
+import { api_url, reglas_documento, reglas_tarea } from './config/config.js';
+
 // --- Selección de elementos ---
 const searchForm = document.getElementById('searchForm');
 const taskForm = document.getElementById('taskForm');
@@ -23,8 +24,6 @@ let totalTasks = 0;
 let isEditing = false;
 let editTaskId = null;
 
-
-
 // --- Utilidades ---
 function updateMessageCount() {
     taskCountLabel.textContent = `${totalTasks} ${totalTasks === 1 ? 'tarea' : 'tareas'}`;
@@ -42,9 +41,44 @@ function resetForm() {
     isEditing = false;
     editTaskId = null;
     taskForm.reset();
+    limpiarErroresTarea();
     document.querySelector('#taskSection .card__title').textContent = "2. Registrar Nueva Tarea";
     const btnText = document.querySelector('#taskForm .btn__text');
     if (btnText) btnText.textContent = "Asignar Tarea";
+}
+
+// --- Manejo de errores del formulario de tareas ---
+function mostrarErroresTarea(errores) {
+    limpiarErroresTarea();
+    const mapa = {
+        taskTitle: 'errorTaskTitle',
+        taskDesc: 'errorTaskDesc',
+        taskStatus: 'errorTaskStatus',
+        taskPriority: 'errorTaskPriority'
+    };
+    for (const campo in errores) {
+        const spanId = mapa[campo];
+        if (spanId) {
+            const span = document.getElementById(spanId);
+            if (span) {
+                span.textContent = errores[campo];
+                // Marcar el input como inválido visualmente
+                const input = taskForm.elements[campo];
+                if (input) input.classList.add('form__input--error');
+            }
+        }
+    }
+}
+
+function limpiarErroresTarea() {
+    ['errorTaskTitle', 'errorTaskDesc', 'errorTaskStatus', 'errorTaskPriority'].forEach(id => {
+        const span = document.getElementById(id);
+        if (span) span.textContent = '';
+    });
+    ['taskTitle', 'taskDesc', 'taskStatus', 'taskPriority'].forEach(name => {
+        const input = taskForm.elements[name];
+        if (input) input.classList.remove('form__input--error');
+    });
 }
 
 // --- Lógica Principal ---
@@ -95,6 +129,8 @@ function prepararEdicion(tareaCard) {
     document.getElementById('taskPriority').value = filas[2].textContent.charAt(0).toUpperCase() + filas[2].textContent.slice(1).toLowerCase();
     document.getElementById('taskStatus').value = filas[3].textContent;
 
+    limpiarErroresTarea();
+
     document.querySelector('#taskSection .card__title').textContent = "Modificar Tarea";
     const btnText = document.querySelector('#taskForm .btn__text');
     if (btnText) btnText.textContent = "Guardar Cambios";
@@ -105,6 +141,7 @@ function prepararEdicion(tareaCard) {
 // --- Eventos ---
 searchForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    searchError.textContent = '';
     let check = validar(e.target, reglas_documento);
     if (!check.valido) {
         searchError.textContent = check.errores.userDoc;
@@ -134,24 +171,34 @@ searchForm.addEventListener('submit', async (e) => {
 
 taskForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // Validar el formulario de tareas
+    const check = validar(e.target, reglas_tarea);
+    if (!check.valido) {
+        mostrarErroresTarea(check.errores);
+        return;
+    }
+
+    limpiarErroresTarea();
+
     const taskData = {
         userId: currentUser.id,
-        titulo: document.getElementById('taskTitle').value,
-        descripcion: document.getElementById('taskDesc').value,
+        titulo: document.getElementById('taskTitle').value.trim(),
+        descripcion: document.getElementById('taskDesc').value.trim(),
         prioridad: document.getElementById('taskPriority').value,
         estado: document.getElementById('taskStatus').value,
         fecha_registro: getCurrentTimestamp()
     };
 
     if (isEditing) {
-        const ok = await editarTarea(api_url,editTaskId, taskData);
+        const ok = await editarTarea(api_url, editTaskId, taskData);
         if (ok) {
             limpiarTareas();
             await renderTareasUsuario(currentUser.id);
             resetForm();
         }
     } else {
-        const nueva = await postTarea(api_url,taskData);
+        const nueva = await postTarea(api_url, taskData);
         if (nueva) {
             const card = crearCardTarea(nueva);
             tasksContainer.insertBefore(card, emptyTasksState);
