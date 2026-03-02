@@ -31,7 +31,7 @@ export const crearCardTarea = (tarea) => {
     card.appendChild(crearFilaConElemento('Importancia', badgePrioridad));
 
     card.appendChild(crearFila('Estado', tarea.estado));
-    
+
     const acciones = document.createElement('div');
     acciones.style.display = 'flex';
     acciones.style.gap = '10px';
@@ -41,7 +41,7 @@ export const crearCardTarea = (tarea) => {
         <button class="btn btn--secondary btn-editar" data-id="${tarea.id}">Editar</button>
         <button class="btn btn--danger btn-eliminar" data-id="${tarea.id}">Eliminar</button>
     `;
-    
+
     card.appendChild(acciones);
     return card;
 }

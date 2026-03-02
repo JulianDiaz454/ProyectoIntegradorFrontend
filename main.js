@@ -1,9 +1,9 @@
-import { validar } from "./helpers/validarDocumento.js";
-import { crearCardTarea } from './components/tareas.js';
-import { getTareas } from './use-case/tareas/getTareas.js';
-import { postTarea } from './use-case/tareas/postTareas.js';
-import { eliminarTarea } from './use-case/tareas/deleteTarea.js'; // Según tu imagen
-import { editarTarea } from './use-case/tareas/updateTarea.js';   // Según tu imagen
+import { validar } from "./service/validacionDocumento.js";
+import { crearCardTarea } from './ui/tareas.js';
+import { getTareas } from './api/tareas/getTareas.js';
+import { postTarea } from './api/tareas/postTareas.js';
+import { eliminarTarea } from './api/tareas/deleteTarea.js';
+import { editarTarea } from './api/tareas/updateTarea.js';
 
 // --- Selección de elementos ---
 const api_url = "http://localhost:3001";
@@ -92,7 +92,7 @@ function prepararEdicion(tareaCard) {
     isEditing = true;
     editTaskId = tareaCard.dataset.id;
     const filas = tareaCard.querySelectorAll('.task-card__value');
-    
+
     document.getElementById('taskTitle').value = filas[0].textContent;
     document.getElementById('taskDesc').value = filas[1].textContent;
     document.getElementById('taskPriority').value = filas[2].textContent.charAt(0).toUpperCase() + filas[2].textContent.slice(1).toLowerCase();
@@ -101,7 +101,7 @@ function prepararEdicion(tareaCard) {
     document.querySelector('#taskSection .card__title').textContent = "Modificar Tarea";
     const btnText = document.querySelector('#taskForm .btn__text');
     if (btnText) btnText.textContent = "Guardar Cambios";
-    
+
     taskSection.scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -124,7 +124,7 @@ searchForm.addEventListener('submit', async (e) => {
         document.getElementById('infoCorreo').textContent = user.correo;
         userInfoSection.classList.remove('hidden');
         taskSection.classList.remove('hidden');
-        
+
         limpiarTareas();
         await renderTareasUsuario(user.id);
         resetForm();

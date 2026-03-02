@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestión de Tareas - SENA</title>
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
   <div class="container">
     <header class="header">
@@ -47,7 +49,8 @@
           </div>
           <div class="form__group">
             <label for="taskDesc" class="form__label">Descripción</label>
-            <textarea id="taskDesc" class="form__input form__textarea" placeholder="Detalles de la tarea..." rows="3" required></textarea>
+            <textarea id="taskDesc" class="form__input form__textarea" placeholder="Detalles de la tarea..." rows="3"
+              required></textarea>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form__group">
@@ -61,7 +64,7 @@
             <div class="form__group">
               <label for="taskPriority" class="form__label">Importancia</label>
               <select id="taskPriority" class="form__input">
-                <option value="Baja">Baja</option>  
+                <option value="Baja">Baja</option>
                 <option value="Media">Media</option>
                 <option value="Alta">Alta</option>
               </select>
@@ -80,7 +83,7 @@
         <h2 class="messages-header__title">Tareas del Usuario</h2>
         <span class="messages-header__count" id="taskCount">0 tareas</span>
       </div>
-      
+
       <div id="tasksContainer" class="tasks-container">
         <div class="messages-empty" id="emptyTasks">
           <p class="messages-empty__text">No hay tareas registradas para este usuario</p>
@@ -92,6 +95,7 @@
       <p class="footer__text">Proyecto Integrador | Gestión de Tareas v1.0</p>
     </footer>
   </div>
-  <script type="module" src="script.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
+
 </html>

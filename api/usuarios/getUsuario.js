@@ -1,3 +1,3 @@
 export const getUsuario = async () => {
-    
+
 }
