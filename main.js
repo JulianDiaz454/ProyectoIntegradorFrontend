@@ -10,6 +10,9 @@ import { api_url, reglas_documento } from './config/config.js';
 import { inicializarOrdenamiento } from './service/ordenamientoTareas.js';
 import { inicializarFiltros } from './service/filtroTareas.js';
 
+// RF04 – Exportación
+import { exportarTareasJSON } from './service/exportarTareas.js';
+
 // --- Selección de elementos ---
 const searchForm = document.getElementById('searchForm');
 const taskForm = document.getElementById('taskForm');
@@ -22,6 +25,9 @@ const emptyTasksState = document.getElementById('emptyTasks');
 const searchError = document.getElementById('searchError');
 const contenedorOrden = document.getElementById('ordenContainer');
 const contenedorFiltros = document.getElementById('filtrosContainer');
+
+// RF04 – referencia al botón exportar
+const btnExportar = document.getElementById('btnExportar');
 
 // --- Estado ---
 let currentUser = null;
@@ -63,11 +69,11 @@ function limpiarTareas() {
 
 function renderizarTareas(tareas) {
     tasksContainer.querySelectorAll('.task-card').forEach(c => c.remove());
-    if (tareas.length === 0) { 
-        showEmptyState(); 
+    if (tareas.length === 0) {
+        showEmptyState();
         totalTasks = 0;
         updateMessageCount();
-        return; 
+        return;
     }
     hideEmptyState();
     tareas.forEach(t => tasksContainer.insertBefore(crearCardTarea(t), emptyTasksState));
@@ -77,13 +83,13 @@ function renderizarTareas(tareas) {
 
 // --- Render y Carga de Datos ---
 async function renderTareasUsuario(userId) {
-    tareasActuales = await getTareas(api_url, userId); 
-    
+    tareasActuales = await getTareas(api_url, userId);
+
     // Activar interfaces si existen
     if (controlesFiltro) controlesFiltro.chequearYActivar();
     if (controlesOrden) controlesOrden.chequearYActivar();
-    
-    renderizarTareas(tareasActuales); 
+
+    renderizarTareas(tareasActuales);
 }
 
 // --- Inicialización de Módulos ---
@@ -101,6 +107,22 @@ if (contenedorOrden) {
         (ordenadas) => renderizarTareas(ordenadas),
         () => tareasActuales
     );
+}
+
+// RF04 – evento del botón exportar
+if (btnExportar) {
+    btnExportar.addEventListener('click', () => {
+        const tareasVisibles = [...tasksContainer.querySelectorAll('.task-card')]
+            .map(card => tareasActuales.find(t => String(t.id) === card.dataset.id))
+            .filter(Boolean);
+
+        const resultado = exportarTareasJSON(tareasVisibles);
+        if (resultado.exito) {
+            notificarExito(`Se exportaron ${resultado.cantidad} tareas correctamente.`);
+        } else {
+            notificarInfo('No hay tareas visibles para exportar.');
+        }
+    });
 }
 
 // --- Acciones: Eliminar y Editar ---
@@ -138,8 +160,8 @@ function prepararEdicion(tareaCard) {
 // --- Eventos ---
 searchForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    searchError.textContent = ""; 
-    
+    searchError.textContent = "";
+
     let check = validar(e.target, reglas_documento);
     if (!check.valido) {
         searchError.textContent = check.errores.userDoc;
@@ -149,7 +171,7 @@ searchForm.addEventListener('submit', async (e) => {
     try {
         const res = await fetch(`${api_url}/users/${userDocInput.value.trim()}`);
         if (!res.ok) throw new Error("Usuario no encontrado");
-        
+
         const user = await res.json();
         currentUser = user;
 
