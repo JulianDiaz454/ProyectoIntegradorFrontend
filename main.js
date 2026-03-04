@@ -1,3 +1,4 @@
+// ... (Tus imports se mantienen igual)
 import { validar } from "./service/validacionDocumento.js";
 import { crearCardTarea } from './ui/tareas.js';
 import { getTareas } from './api/tareas/getTareas.js';
@@ -6,12 +7,12 @@ import { eliminarTarea } from './api/tareas/deleteTarea.js';
 import { editarTarea } from './api/tareas/updateTarea.js';
 import { api_url, reglas_documento } from './config/config.js';
 import { inicializarOrdenamiento } from './service/ordenamientoTareas.js';
+import { inicializarFiltros } from './service/filtroTareas.js';
 
 // --- Selección de elementos ---
 const searchForm = document.getElementById('searchForm');
 const taskForm = document.getElementById('taskForm');
 const userDocInput = document.getElementById('userDoc');
-
 const userInfoSection = document.getElementById('userInfo');
 const taskSection = document.getElementById('taskSection');
 const tasksContainer = document.getElementById('tasksContainer');
@@ -19,6 +20,7 @@ const taskCountLabel = document.getElementById('taskCount');
 const emptyTasksState = document.getElementById('emptyTasks');
 const searchError = document.getElementById('searchError');
 const contenedorOrden = document.getElementById('ordenContainer');
+const contenedorFiltros = document.getElementById('filtrosContainer');
 
 // --- Estado ---
 let currentUser = null;
@@ -26,13 +28,12 @@ let totalTasks = 0;
 let isEditing = false;
 let editTaskId = null;
 let tareasActuales = [];
-
+let controlesFiltro = null; // Variable para controlar la activación de filtros
 
 // --- Utilidades ---
 function updateMessageCount() {
     taskCountLabel.textContent = `${totalTasks} ${totalTasks === 1 ? 'tarea' : 'tareas'}`;
 }
-
 function hideEmptyState() { if (emptyTasksState) emptyTasksState.classList.add('hidden'); }
 function showEmptyState() { if (emptyTasksState) emptyTasksState.classList.remove('hidden'); }
 
@@ -50,52 +51,50 @@ function resetForm() {
     if (btnText) btnText.textContent = "Asignar Tarea";
 }
 
-// --- Lógica Principal ---
+// --- Lógica de Renderizado ---
 function limpiarTareas() {
-    const cards = tasksContainer.querySelectorAll('.task-card');
-    cards.forEach(card => card.remove());
+    tasksContainer.querySelectorAll('.task-card').forEach(card => card.remove());
     totalTasks = 0;
     updateMessageCount();
     showEmptyState();
 }
 
-// async function renderTareasUsuario(userId) {
-//     const tareas = await getTareas(api_url, userId);
-//     if (tareas.length === 0) {
-//         showEmptyState();
-//         return;
-//     }
-//     tareas.forEach(tarea => {
-//         const card = crearCardTarea(tarea);
-//         tasksContainer.insertBefore(card, emptyTasksState);
-//         totalTasks++;
-//     });
-//     updateMessageCount();
-//     hideEmptyState();
-// }
-
 function renderizarTareas(tareas) {
     tasksContainer.querySelectorAll('.task-card').forEach(c => c.remove());
-    
     if (tareas.length === 0) { 
         showEmptyState(); 
         totalTasks = 0;
         updateMessageCount();
         return; 
     }
-    
     hideEmptyState();
     tareas.forEach(t => tasksContainer.insertBefore(crearCardTarea(t), emptyTasksState));
     totalTasks = tareas.length;
     updateMessageCount();
 }
 
+// --- Render y Carga de Datos ---
 async function renderTareasUsuario(userId) {
     tareasActuales = await getTareas(api_url, userId); 
+    
+    // Si el módulo de filtros existe, activamos la interfaz (quitar placeholder)
+    if (controlesFiltro) {
+        controlesFiltro.chequearYActivar();
+    }
+    
     renderizarTareas(tareasActuales); 
 }
 
-// Inicialización del ordenamiento
+// --- Inicialización de Módulos (Filtros y Orden) ---
+if (contenedorFiltros) {
+    // Guardamos el retorno para poder usar "chequearYActivar"
+    controlesFiltro = inicializarFiltros(
+        contenedorFiltros,
+        (filtradas) => renderizarTareas(filtradas),
+        () => tareasActuales
+    );
+}
+
 if (contenedorOrden) {
     inicializarOrdenamiento(
         contenedorOrden,
@@ -103,16 +102,15 @@ if (contenedorOrden) {
         () => tareasActuales
     );
 }
+
 // --- Acciones: Eliminar y Editar ---
 async function processEliminar(id) {
     if (confirm("¿Estás seguro de eliminar esta tarea?")) {
         const exito = await eliminarTarea(api_url, id);
         if (exito) {
-            const card = tasksContainer.querySelector(`[data-id="${id}"]`);
-            if (card) card.remove();
-            totalTasks--;
-            updateMessageCount();
-            if (totalTasks === 0) showEmptyState();
+            // Actualizar arreglo maestro para que los filtros sigan funcionando bien
+            tareasActuales = tareasActuales.filter(t => t.id != id);
+            renderizarTareas(tareasActuales);
         }
     }
 }
@@ -137,6 +135,8 @@ function prepararEdicion(tareaCard) {
 // --- Eventos ---
 searchForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    searchError.textContent = ""; // Limpiar errores previos
+    
     let check = validar(e.target, reglas_documento);
     if (!check.valido) {
         searchError.textContent = check.errores.userDoc;
@@ -145,22 +145,26 @@ searchForm.addEventListener('submit', async (e) => {
 
     try {
         const res = await fetch(`${api_url}/users/${userDocInput.value.trim()}`);
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error("Usuario no encontrado");
+        
         const user = await res.json();
         currentUser = user;
 
-        document.getElementById('infoNombre').textContent = user.nombre_completo;
-        document.getElementById('infoCorreo').textContent = user.correo;
+        // Mostrar secciones ANTES de llenar datos por si las keys de la API varían
         userInfoSection.classList.remove('hidden');
         taskSection.classList.remove('hidden');
+
+        // Llenar info (Ajusta 'name' o 'email' según tu API real)
+        document.getElementById('infoNombre').textContent = user.nombre_completo || user.name || "N/A";
+        document.getElementById('infoCorreo').textContent = user.correo || user.email || "N/A";
 
         limpiarTareas();
         await renderTareasUsuario(user.id);
         resetForm();
-    } catch {
+    } catch (error) {
         userInfoSection.classList.add('hidden');
         taskSection.classList.add('hidden');
-        searchError.textContent = "Usuario no encontrado";
+        searchError.textContent = "Usuario no encontrado en el sistema";
     }
 });
 
@@ -176,20 +180,16 @@ taskForm.addEventListener('submit', async (e) => {
     };
 
     if (isEditing) {
-        const ok = await editarTarea(api_url,editTaskId, taskData);
+        const ok = await editarTarea(api_url, editTaskId, taskData);
         if (ok) {
-            limpiarTareas();
             await renderTareasUsuario(currentUser.id);
             resetForm();
         }
     } else {
-        const nueva = await postTarea(api_url,taskData);
+        const nueva = await postTarea(api_url, taskData);
         if (nueva) {
-            const card = crearCardTarea(nueva);
-            tasksContainer.insertBefore(card, emptyTasksState);
-            totalTasks++;
-            updateMessageCount();
-            hideEmptyState();
+            // Recargamos todo el set para mantener tareasActuales sincronizado con los filtros
+            await renderTareasUsuario(currentUser.id);
             resetForm();
         }
     }

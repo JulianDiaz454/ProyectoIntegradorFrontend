@@ -254,7 +254,39 @@ body {
     margin-top: 0 !important; 
     min-width: 160px;
 }
-
+.filtros-toolbar {
+    display: flex;
+    flex-wrap: wrap; 
+    gap: 1.2rem; 
+    align-items: 
+    flex-end; 
+    padding-top: .5rem;
+}
+.filtros__bloque { 
+    display: flex; 
+    flex-wrap: wrap;
+    gap: .75rem;
+    align-items: flex-end;
+    }
+.filtros__placeholder { 
+    color: #94a3b8; 
+    font-size: .85rem; 
+    font-style: italic;
+    margin: 0; }
+.filtros__grupo { 
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    }
+.form__input--sm {
+    padding: .4rem .6rem; 
+    font-size: .85rem;
+    min-width: 150px;
+    }
+.btn--sm {
+    padding: .4rem .85rem; 
+    font-size: .85rem; 
+    }
 /* ============================================
     BOTONES
    ============================================ */
