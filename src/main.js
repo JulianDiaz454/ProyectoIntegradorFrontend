@@ -1,65 +1,76 @@
-// --- Imports (Combinados) ---
-import { validar } from "./service/validacionDocumento.js";
+// ============================================================
+// IMPORTS — misma estructura del equipo, ampliada
+// ============================================================
+import { validar, validarConUI, limpiarErrores } from "./service/validacionDocumento.js";
 import { notificarExito, notificarError, notificarInfo } from './service/notificaciones.js';
-import { crearCardTarea } from './ui/tareas.js';
-import { getTareas } from './api/tareas/getTareas.js';
+import { crearCardTarea, crearCardTareaAdmin } from './ui/tareas.js';
+import { crearCardUsuario } from './ui/usuarios.js';
+import { getTareas, getTodasLasTareas } from './api/tareas/getTareas.js';
 import { postTarea } from './api/tareas/postTareas.js';
 import { eliminarTarea } from './api/tareas/deleteTarea.js';
-import { editarTarea } from './api/tareas/updateTarea.js';
-import { api_url, reglas_documento } from './config/config.js';
+import { editarTarea, actualizarEstadoTarea } from './api/tareas/updateTarea.js';
+import { getUsuario, getUsuarios, crearUsuario, editarUsuario, eliminarUsuario, toggleActivoUsuario } from './api/usuarios/usuariosApi.js';
+import { api_url, reglas_documento, reglas_tarea, reglas_usuario } from './config/config.js';
 import { inicializarOrdenamiento } from './service/ordenamientoTareas.js';
 import { inicializarFiltros } from './service/filtroTareas.js';
-
-// RF04 – Exportación
 import { exportarTareasJSON } from './service/exportarTareas.js';
 
-// --- Selección de elementos ---
-const searchForm = document.getElementById('searchForm');
-const taskForm = document.getElementById('taskForm');
-const userDocInput = document.getElementById('userDoc');
-const userInfoSection = document.getElementById('userInfo');
-const taskSection = document.getElementById('taskSection');
-const tasksContainer = document.getElementById('tasksContainer');
-const taskCountLabel = document.getElementById('taskCount');
-const emptyTasksState = document.getElementById('emptyTasks');
-const searchError = document.getElementById('searchError');
-const contenedorOrden = document.getElementById('ordenContainer');
-const contenedorFiltros = document.getElementById('filtrosContainer');
-
-// RF04 – referencia al botón exportar
-const btnExportar = document.getElementById('btnExportar');
-
-// --- Estado ---
-let currentUser = null;
-let totalTasks = 0;
-let isEditing = false;
-let editTaskId = null;
-let tareasActuales = [];
+// ============================================================
+// ESTADO GLOBAL
+// ============================================================
+let currentUser     = null;
+let totalTasks      = 0;
+let tareasActuales  = [];   // tareas del usuario activo (panel usuario)
 let controlesFiltro = null;
-let controlesOrden = null;
+let controlesOrden  = null;
 
-// --- Utilidades ---
+// Estado panel admin
+let todosUsuarios   = [];
+let todasTareas     = [];
+let editandoTareaAdmin = false;
+let editTareaAdminId   = null;
+let editandoUser    = false;
+let editUserId      = null;
+
+// ============================================================
+// SELECTORES DOM — Panel Usuario (igual que el original)
+// ============================================================
+const searchForm      = document.getElementById('searchForm');
+const userDocInput    = document.getElementById('userDoc');
+const userInfoSection = document.getElementById('userInfo');
+const tasksContainer  = document.getElementById('tasksContainer');
+const taskCountLabel  = document.getElementById('taskCount');
+const emptyTasksState = document.getElementById('emptyTasks');
+const searchError     = document.getElementById('searchError');
+const contenedorOrden    = document.getElementById('ordenContainer');
+const contenedorFiltros  = document.getElementById('filtrosContainer');
+const btnExportar        = document.getElementById('btnExportar');
+
+// Selectores panel admin
+const btnAbrirAdmin    = document.getElementById('btnAbrirAdmin');
+const btnCerrarAdmin   = document.getElementById('btnCerrarAdmin');
+const panelAdmin       = document.getElementById('panelAdmin');
+const panelUsuario     = document.getElementById('panelUsuario');
+
+// ============================================================
+// UTILIDADES — exactas del original
+// ============================================================
 function updateMessageCount() {
     taskCountLabel.textContent = `${totalTasks} ${totalTasks === 1 ? 'tarea' : 'tareas'}`;
 }
 function hideEmptyState() { if (emptyTasksState) emptyTasksState.classList.add('hidden'); }
-function showEmptyState() { if (emptyTasksState) emptyTasksState.classList.remove('hidden'); }
+function showEmptyState()  { if (emptyTasksState) emptyTasksState.classList.remove('hidden'); }
 
 function getCurrentTimestamp() {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date().toLocaleDateString('es-ES', options);
 }
 
-function resetForm() {
-    isEditing = false;
-    editTaskId = null;
-    taskForm.reset();
-    document.querySelector('#taskSection .card__title').textContent = "2. Registrar Nueva Tarea";
-    const btnText = document.querySelector('#taskForm .btn__text');
-    if (btnText) btnText.textContent = "Asignar Tarea";
-}
 
-// --- Lógica de Renderizado ---
+
+// ============================================================
+// RENDERIZADO — igual que el original
+// ============================================================
 function limpiarTareas() {
     tasksContainer.querySelectorAll('.task-card').forEach(card => card.remove());
     totalTasks = 0;
@@ -76,23 +87,23 @@ function renderizarTareas(tareas) {
         return;
     }
     hideEmptyState();
-    tareas.forEach(t => tasksContainer.insertBefore(crearCardTarea(t), emptyTasksState));
+    tareas.forEach(t => tasksContainer.insertBefore(crearCardTarea(t, todosUsuarios), emptyTasksState));
     totalTasks = tareas.length;
     updateMessageCount();
 }
 
-// --- Render y Carga de Datos ---
 async function renderTareasUsuario(userId) {
     tareasActuales = await getTareas(api_url, userId);
-
-    // Activar interfaces si existen
     if (controlesFiltro) controlesFiltro.chequearYActivar();
-    if (controlesOrden) controlesOrden.chequearYActivar();
-
+    if (controlesOrden)  controlesOrden.chequearYActivar();
     renderizarTareas(tareasActuales);
 }
 
-// --- Inicialización de Módulos ---
+
+
+// ============================================================
+// MÓDULOS: Filtros y Ordenamiento — igual que el original
+// ============================================================
 if (contenedorFiltros) {
     controlesFiltro = inicializarFiltros(
         contenedorFiltros,
@@ -109,7 +120,9 @@ if (contenedorOrden) {
     );
 }
 
-// RF04 – evento del botón exportar
+// ============================================================
+// EXPORTAR — igual que el original
+// ============================================================
 if (btnExportar) {
     btnExportar.addEventListener('click', () => {
         const tareasVisibles = [...tasksContainer.querySelectorAll('.task-card')]
@@ -125,39 +138,9 @@ if (btnExportar) {
     });
 }
 
-// --- Acciones: Eliminar y Editar ---
-async function processEliminar(id) {
-    if (confirm("¿Estás seguro de eliminar esta tarea?")) {
-        const exito = await eliminarTarea(api_url, id);
-        if (exito) {
-            // Tu lógica: actualiza el arreglo maestro para que los filtros sigan funcionando
-            tareasActuales = tareasActuales.filter(t => t.id != id);
-            renderizarTareas(tareasActuales);
-            notificarExito('Tarea eliminada correctamente.');
-        } else {
-            notificarError('No se pudo eliminar la tarea.');
-        }
-    }
-}
-
-function prepararEdicion(tareaCard) {
-    isEditing = true;
-    editTaskId = tareaCard.dataset.id;
-    const filas = tareaCard.querySelectorAll('.task-card__value');
-
-    document.getElementById('taskTitle').value = filas[0].textContent;
-    document.getElementById('taskDesc').value = filas[1].textContent;
-    document.getElementById('taskPriority').value = filas[3].textContent.charAt(0).toUpperCase() + filas[3].textContent.slice(1).toLowerCase();
-    document.getElementById('taskStatus').value = filas[4].textContent;
-
-    document.querySelector('#taskSection .card__title').textContent = "Modificar Tarea";
-    const btnText = document.querySelector('#taskForm .btn__text');
-    if (btnText) btnText.textContent = "Guardar Cambios";
-
-    taskSection.scrollIntoView({ behavior: 'smooth' });
-}
-
-// --- Eventos ---
+// ============================================================
+// PANEL USUARIO — Buscar usuario (igual que el original)
+// ============================================================
 searchForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     searchError.textContent = "";
@@ -169,62 +152,349 @@ searchForm.addEventListener('submit', async (e) => {
     }
 
     try {
-        const res = await fetch(`${api_url}/users/${userDocInput.value.trim()}`);
-        if (!res.ok) throw new Error("Usuario no encontrado");
-
-        const user = await res.json();
+        const user = await getUsuario(api_url, userDocInput.value.trim());
         currentUser = user;
 
+        if (todosUsuarios.length === 0) todosUsuarios = await getUsuarios(api_url);
+
         userInfoSection.classList.remove('hidden');
-        taskSection.classList.remove('hidden');
 
-        document.getElementById('infoNombre').textContent = user.nombre_completo || user.name || "N/A";
-        document.getElementById('infoCorreo').textContent = user.correo || user.email || "N/A";
+        document.getElementById('infoNombre').textContent = user.nombre_completo || "N/A";
+        document.getElementById('infoCorreo').textContent = user.correo || "N/A";
 
+        // Poblar checkboxes con los demás usuarios (excluir al usuario actual)
         limpiarTareas();
         await renderTareasUsuario(user.id);
-        resetForm();
-        notificarInfo(`Usuario ${user.nombre_completo || user.name} cargado.`);
+        notificarInfo(`Usuario ${user.nombre_completo} cargado.`);
     } catch (error) {
         userInfoSection.classList.add('hidden');
-        taskSection.classList.add('hidden');
         searchError.textContent = "Usuario no encontrado en el sistema";
         notificarError('No se encontró el usuario.');
     }
 });
 
-taskForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const taskData = {
-        userId: currentUser.id,
-        titulo: document.getElementById('taskTitle').value,
-        descripcion: document.getElementById('taskDesc').value,
-        prioridad: document.getElementById('taskPriority').value,
-        estado: document.getElementById('taskStatus').value,
-        fecha_registro: getCurrentTimestamp()
-    };
 
-    if (isEditing) {
-        const ok = await editarTarea(api_url, editTaskId, taskData);
-        if (ok) {
-            await renderTareasUsuario(currentUser.id);
-            resetForm();
-            notificarExito('Tarea actualizada correctamente.');
-        }
+
+// ============================================================
+// PANEL USUARIO — Clicks en cards (solo estado, no hay editar/eliminar)
+// ============================================================
+
+// Cambiar estado desde select en la card del usuario
+tasksContainer.addEventListener('change', async (e) => {
+    if (!e.target.classList.contains('select-estado')) return;
+    const id     = e.target.dataset.id;
+    const estado = e.target.value;
+    const ok = await actualizarEstadoTarea(api_url, id, estado);
+    if (ok) {
+        tareasActuales = tareasActuales.map(t => String(t.id) === String(id) ? { ...t, estado } : t);
+        notificarExito(`Estado actualizado a "${estado}".`);
     } else {
-        const nueva = await postTarea(api_url, taskData);
-        if (nueva) {
-            await renderTareasUsuario(currentUser.id);
-            resetForm();
-            notificarExito('Tarea creada correctamente.');
-        } else {
-            notificarError('No se pudo crear la tarea.');
-        }
+        notificarError('No se pudo actualizar el estado.');
     }
 });
 
-tasksContainer.addEventListener('click', async (e) => {
-    const id = e.target.dataset.id;
-    if (e.target.classList.contains('btn-eliminar')) await processEliminar(id);
-    if (e.target.classList.contains('btn-editar')) prepararEdicion(e.target.closest('.task-card'));
+// ============================================================
+// PANEL ADMIN — Toggle visibilidad
+// ============================================================
+if (btnAbrirAdmin) {
+    btnAbrirAdmin.addEventListener('click', () => {
+        panelUsuario.classList.add('hidden');
+        panelAdmin.classList.remove('hidden');
+        iniciarAdmin();
+    });
+}
+
+if (btnCerrarAdmin) {
+    btnCerrarAdmin.addEventListener('click', () => {
+        panelAdmin.classList.add('hidden');
+        panelUsuario.classList.remove('hidden');
+    });
+}
+
+// Tabs del panel admin
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab === 'tab-admin-tareas')  { resetAdminTaskForm(); cargarTareasAdmin(); }
+        if (btn.dataset.tab === 'tab-admin-usuarios') { resetUserForm(); cargarUsuariosAdmin(); }
+        if (btn.dataset.tab === 'tab-dashboard')       cargarDashboard();
+    });
+});
+
+async function iniciarAdmin() {
+    if (todosUsuarios.length === 0) todosUsuarios = await getUsuarios(api_url);
+    await cargarDashboard();
+}
+
+// ============================================================
+// ADMIN — Dashboard
+// ============================================================
+async function cargarDashboard() {
+    const grid = document.getElementById('dashboardGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    try {
+        const [tasks, users] = await Promise.all([
+            getTodasLasTareas(api_url),
+            getUsuarios(api_url)
+        ]);
+        const stats = [
+            { num: tasks.length,                             label: 'Total Tareas',   clase: 'stat--primary' },
+            { num: tasks.filter(t => t.estado === 'Pendiente').length,   label: 'Pendientes',     clase: 'stat--warning' },
+            { num: tasks.filter(t => t.estado === 'En Progreso').length, label: 'En Progreso',    clase: 'stat--info' },
+            { num: tasks.filter(t => t.estado === 'Completada').length,  label: 'Completadas',    clase: 'stat--success' },
+            { num: tasks.filter(t => t.prioridad === 'Alta').length,     label: 'Alta Prioridad', clase: 'stat--danger' },
+            { num: `${users.filter(u => u.activo).length}/${users.length}`, label: 'Usuarios Activos', clase: 'stat--neutral' }
+        ];
+        stats.forEach(s => {
+            const card = document.createElement('div');
+            card.classList.add('stat-card', s.clase);
+            const num = document.createElement('span');
+            num.classList.add('stat-card__num');
+            num.textContent = s.num;
+            const lbl = document.createElement('span');
+            lbl.classList.add('stat-card__label');
+            lbl.textContent = s.label;
+            card.appendChild(num);
+            card.appendChild(lbl);
+            grid.appendChild(card);
+        });
+    } catch { grid.textContent = 'Error al cargar estadísticas'; }
+}
+
+// ============================================================
+// ADMIN — Tareas
+// ============================================================
+async function cargarTareasAdmin() {
+    const lista = document.getElementById('adminTasksList');
+    if (!lista) return;
+    lista.innerHTML = '';
+    if (todosUsuarios.length === 0) todosUsuarios = await getUsuarios(api_url);
+    todasTareas = await getTodasLasTareas(api_url);
+    const estado    = document.getElementById('filtroAdminEstado')?.value || '';
+    const prioridad = document.getElementById('filtroAdminPrioridad')?.value || '';
+    const userId    = document.getElementById('filtroAdminUser')?.value?.trim() || '';
+
+    let result = [...todasTareas];
+    if (estado)    result = result.filter(t => t.estado    === estado);
+    if (prioridad) result = result.filter(t => t.prioridad === prioridad);
+    if (userId)    result = result.filter(t => (t.userIds || []).includes(String(userId)));
+
+    const contador = document.getElementById('adminTaskCount');
+    if (contador) contador.textContent = result.length;
+
+    if (result.length === 0) {
+        const p = document.createElement('p');
+        p.classList.add('filtros__placeholder');
+        p.textContent = 'No hay tareas con esos filtros.';
+        lista.appendChild(p);
+        return;
+    }
+    result.forEach(t => lista.appendChild(crearCardTareaAdmin(t, todosUsuarios)));
+}
+
+// Poblar checkboxes del form de tarea admin
+async function poblarCheckboxAdmin(seleccionados = []) {
+    const cont = document.getElementById('checkboxAdminUsuarios');
+    if (!cont) return;
+    cont.innerHTML = '';
+    if (todosUsuarios.length === 0) todosUsuarios = await getUsuarios(api_url);
+    todosUsuarios.filter(u => u.activo).forEach(u => {
+        const label = document.createElement('label');
+        label.classList.add('checkbox-label');
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = u.id;
+        cb.classList.add('cb-admin-asignar');
+        if (seleccionados.includes(String(u.id))) cb.checked = true;
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(` ${u.nombre_completo}`));
+        cont.appendChild(label);
+    });
+}
+
+const getCheckedAdminUsers = () =>
+    [...document.querySelectorAll('.cb-admin-asignar:checked')].map(cb => cb.value);
+
+function resetAdminTaskForm() {
+    editandoTareaAdmin = false; editTareaAdminId = null;
+    const form = document.getElementById('adminTaskForm');
+    form?.reset();
+    limpiarErrores(form, reglas_tarea);
+    const titulo = document.getElementById('adminTaskFormTitle');
+    if (titulo) titulo.textContent = '➕ Nueva Tarea';
+    const btnLbl = document.getElementById('adminTaskBtnLabel');
+    if (btnLbl) btnLbl.textContent = 'Crear Tarea';
+    const btnCancel = document.getElementById('btnCancelarAdminTask');
+    if (btnCancel) btnCancel.classList.add('hidden');
+    poblarCheckboxAdmin();
+}
+
+document.getElementById('adminTaskForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+
+    // Validar campos obligatorios
+    const { valido } = validarConUI(form, reglas_tarea);
+    if (!valido) return;
+
+    const userIds = getCheckedAdminUsers();
+    if (userIds.length === 0) { notificarError('Selecciona al menos un usuario'); return; }
+    const datos = {
+        userIds,
+        titulo:         document.getElementById('adminTaskTitulo').value.trim(),
+        descripcion:    document.getElementById('adminTaskDesc').value.trim(),
+        estado:         document.getElementById('adminTaskEstado').value,
+        prioridad:      document.getElementById('adminTaskPrioridad').value,
+        fecha_registro: getCurrentTimestamp()
+    };
+    try {
+        if (editandoTareaAdmin) {
+            await editarTarea(api_url, editTareaAdminId, datos);
+            notificarExito('Tarea actualizada ✓');
+        } else {
+            await postTarea(api_url, datos);
+            notificarExito('Tarea creada ✓');
+        }
+        resetAdminTaskForm();
+        await cargarTareasAdmin();
+        await cargarDashboard();
+    } catch { notificarError('Error al guardar tarea'); }
+});
+
+document.getElementById('btnCancelarAdminTask')?.addEventListener('click', resetAdminTaskForm);
+
+// Filtros admin
+document.getElementById('btnFiltrarAdmin')?.addEventListener('click', cargarTareasAdmin);
+document.getElementById('btnLimpiarAdmin')?.addEventListener('click', () => {
+    ['filtroAdminEstado', 'filtroAdminPrioridad', 'filtroAdminUser'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    cargarTareasAdmin();
+});
+
+// Delegación clicks en lista admin tareas
+document.getElementById('adminTasksList')?.addEventListener('click', async (e) => {
+    const card = e.target.closest('.task-card');
+    if (!card) return;
+    const id = card.dataset.id;
+
+    if (e.target.classList.contains('btn-editar-admin')) {
+        const t = todasTareas.find(t => String(t.id) === String(id));
+        if (!t) return;
+        editandoTareaAdmin = true; editTareaAdminId = id;
+        document.getElementById('adminTaskFormTitle').textContent = '✏️ Editar Tarea';
+        document.getElementById('adminTaskBtnLabel').textContent  = 'Guardar Cambios';
+        document.getElementById('btnCancelarAdminTask').classList.remove('hidden');
+        document.getElementById('adminTaskTitulo').value    = t.titulo;
+        document.getElementById('adminTaskDesc').value      = t.descripcion || '';
+        document.getElementById('adminTaskEstado').value    = t.estado;
+        document.getElementById('adminTaskPrioridad').value = t.prioridad;
+        poblarCheckboxAdmin(t.userIds || []);
+        document.getElementById('adminTaskFormCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    if (e.target.classList.contains('btn-eliminar-admin')) {
+        if (!confirm('¿Eliminar esta tarea?')) return;
+        await eliminarTarea(api_url, id);
+        notificarExito('Tarea eliminada ✓');
+        await cargarTareasAdmin();
+        await cargarDashboard();
+    }
+});
+
+// ============================================================
+// ADMIN — Usuarios
+// ============================================================
+async function cargarUsuariosAdmin() {
+    const lista = document.getElementById('usersAdminList');
+    if (!lista) return;
+    lista.innerHTML = '';
+    todosUsuarios = await getUsuarios(api_url);
+    const contador = document.getElementById('userAdminCount');
+    if (contador) contador.textContent = todosUsuarios.length;
+    todosUsuarios.forEach(u => lista.appendChild(crearCardUsuario(u)));
+}
+
+function resetUserForm() {
+    editandoUser = false; editUserId = null;
+    const form = document.getElementById('userAdminForm');
+    form?.reset();
+    limpiarErrores(form, reglas_usuario);
+    const titulo = document.getElementById('userAdminFormTitle');
+    if (titulo) titulo.textContent = '➕ Nuevo Usuario';
+    const btnLbl = document.getElementById('userAdminBtnLabel');
+    if (btnLbl) btnLbl.textContent = 'Crear Usuario';
+    const btnCancel = document.getElementById('btnCancelarUserAdmin');
+    if (btnCancel) btnCancel.classList.add('hidden');
+}
+
+document.querySelector('[data-tab="tab-admin-usuarios"]')?.addEventListener('click', () => {
+    resetUserForm();
+    cargarUsuariosAdmin();
+});
+
+document.getElementById('userAdminForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+
+    // Validar campos obligatorios
+    const { valido } = validarConUI(form, reglas_usuario);
+    if (!valido) return;
+
+    const datos = {
+        nombre_completo: document.getElementById('adminUserNombre').value.trim(),
+        correo:          document.getElementById('adminUserCorreo').value.trim()
+    };
+    try {
+        if (editandoUser) {
+            const userActual = todosUsuarios.find(u => String(u.id) === String(editUserId));
+            await editarUsuario(api_url, editUserId, { ...userActual, ...datos });
+            notificarExito('Usuario actualizado ✓');
+        } else {
+            await crearUsuario(api_url, datos);
+            notificarExito('Usuario creado ✓');
+        }
+        resetUserForm();
+        await cargarUsuariosAdmin();
+    } catch { notificarError('Error al guardar usuario'); }
+});
+
+document.getElementById('btnCancelarUserAdmin')?.addEventListener('click', resetUserForm);
+
+document.getElementById('usersAdminList')?.addEventListener('click', async (e) => {
+    const card = e.target.closest('.user-card');
+    if (!card) return;
+    const id = card.dataset.id;
+
+    if (e.target.classList.contains('btn-editar-user')) {
+        const u = todosUsuarios.find(u => String(u.id) === String(id));
+        if (!u) return;
+        editandoUser = true; editUserId = id;
+        document.getElementById('userAdminFormTitle').textContent = '✏️ Editar Usuario';
+        document.getElementById('userAdminBtnLabel').textContent  = 'Guardar Cambios';
+        document.getElementById('btnCancelarUserAdmin').classList.remove('hidden');
+        document.getElementById('adminUserNombre').value = u.nombre_completo;
+        document.getElementById('adminUserCorreo').value = u.correo;
+        document.getElementById('userAdminForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    if (e.target.classList.contains('btn-toggle-user')) {
+        const u = todosUsuarios.find(u => String(u.id) === String(id));
+        if (!u) return;
+        await toggleActivoUsuario(api_url, id, !u.activo);
+        notificarInfo(`Usuario ${u.activo ? 'desactivado' : 'activado'}`);
+        await cargarUsuariosAdmin();
+    }
+
+    if (e.target.classList.contains('btn-eliminar-user')) {
+        if (!confirm('¿Eliminar este usuario?')) return;
+        await eliminarUsuario(api_url, id);
+        notificarExito('Usuario eliminado ✓');
+        await cargarUsuariosAdmin();
+    }
 });
