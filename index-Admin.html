@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="/src/styles.css">
+</head>
+
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 class="header__title">Gestión de Tareas</h1>
+      <p class="header__subtitle">Consulta de usuarios y asignación dinámica de actividades</p>
+    </header>
+
+    <section class="form-section">
+      <div class="card">
+        <h2 class="card__title">1. Identificación del Usuario</h2>
+        <form id="searchForm" class="form">
+          <div class="form__group">
+            <label for="userDoc" class="form__label">Documento del Usuario</label>
+            <input type="text" id="userDoc" name="userDoc" class="form__input" placeholder="Ej: 10101">
+            <span class="form__error" id="searchError"></span>
+          </div>
+          <div class="container__button">
+            <button type="submit" class="btn btn--primary" id="searchBtn">
+              <span class="btn__text">Buscar Usuario</span>
+              <span class="btn__icon">🔍</span>
+            </button>
+            <button type="submit" class="btn btn--primary" id="searchBtn">
+              <span class="btn__text">Añadir usuario</span>
+              <span class="btn__icon">➕</span>
+            </button>
+          </div>
+        </form>
+
+        <div id="userInfo" class="user-info hidden">
+          <div class="user-info__content">
+            <p><strong>Nombre:</strong> <span id="infoNombre"></span></p>
+            <p><strong>Correo:</strong> <span id="infoCorreo"></span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="container__task">
+      <section class="container__users">
+        <h2 class="title">Usuarios agregados a la tarea</h2>
+        <div id="listaUsuariosAgregados"></div>
+      </section>
+
+      <template id="tpl-usuario-agregado">
+        <div class="user-card-mini">
+          <span class="user-name" ></span>
+          <button class="btn-remove">remover</button>
+        </div>
+      </template>
+
+      <section id="taskSection" class="form-section hidden">
+        <div class="card">
+          <h2 class="card__title">2. Registrar Nueva Tarea</h2>
+          <form id="taskForm" class="form">
+            <div class="form__group">
+              <label for="taskTitle" class="form__label">Título de la Tarea</label>
+              <input type="text" id="taskTitle" class="form__input" placeholder="¿Qué hay que hacer?" required>
+            </div>
+            <div class="form__group">
+              <label for="taskDesc" class="form__label">Descripción</label>
+              <textarea id="taskDesc" class="form__input form__textarea" placeholder="Detalles de la tarea..." rows="3"
+                required></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form__group">
+                <label for="taskStatus" class="form__label">Estado</label>
+                <select id="taskStatus" class="form__input">
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="En Progreso">En Progreso</option>
+                  <option value="Completada">Completada</option>
+                </select>
+              </div>
+              <div class="form__group">
+                <label for="taskPriority" class="form__label">Importancia</label>
+                <select id="taskPriority" class="form__input">
+                  <option value="Baja">Baja</option>
+                  <option value="Media">Media</option>
+                  <option value="Alta">Alta</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn--primary">
+              <span class="btn__text">Asignar Tarea</span>
+              <span class="btn__icon">➕</span>
+            </button>
+          </form>
+        </div>
+      </section>
+    </div>
+    
+
+    <!-- <section class="form-section">
+      <div class="card">
+        <h2 class="card__title">🔍 Filtrar Tareas</h2>
+        <div class="filtros-toolbar">
+          <div id="filtrosContainer" class="filtros__bloque">
+            <p class="filtros__placeholder">Busca un usuario para activar los filtros.</p>
+          </div>
+        </div>
+      </div>
+    </section> -->
+
+    <section class="form-section">
+      <div class="card">
+        <h2 class="card__title">↕️ Ordenar Tareas</h2>
+        <div class="filtros-toolbar">
+          <div id="ordenContainer" class="filtros__bloque">
+            <p class="filtros__placeholder">Busca un usuario para activar el ordenamiento.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RF04: Exportar -->
+    <section class="form-section">
+      <div class="card">
+        <h2 class="card__title">⬇️ Exportar Tareas</h2>
+        <div class="filtros-toolbar">
+          <div class="filtros__bloque">
+            <p class="form__label">Exportar tareas visibles en pantalla como archivo JSON</p>
+            <button id="btnExportar" class="btn btn--secondary">
+              <span class="btn__text">Exportar JSON</span>
+              <span class="btn__icon">⬇️</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="messages-section">
+      <div class="messages-header">
+        <h2 class="messages-header__title">Tareas del Usuario</h2>
+        <span class="messages-header__count" id="taskCount">0 tareas</span>
+      </div>
+
+      <div id="tasksContainer" class="tasks-container">
+        <div class="messages-empty" id="emptyTasks">
+          <p class="messages-empty__text">No hay tareas registradas para este usuario</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p class="footer__text">Proyecto Integrador | Gestión de Tareas v3.0.0</p>
+    </footer>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

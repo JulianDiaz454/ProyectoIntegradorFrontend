@@ -1,0 +1,29 @@
+{
+  "users": [
+    { "id": "10103", "nombre_completo": "Carlos Ruiz",     "correo": "carlos.ruiz@email.com",  "activo": true  },
+    { "id": "10104", "nombre_completo": "Lucía Fernández", "correo": "lucia.fdez@email.com",   "activo": true  },
+    { "id": "10105", "nombre_completo": "Marcos Paez",     "correo": "marcos.paez@email.com",  "activo": true  },
+    { "id": "10106", "nombre_completo": "Sofía Castro",    "correo": "sofia.castro@email.com", "activo": true  },
+    { "id": "10107", "nombre_completo": "Diego Mora",      "correo": "diego.mora@email.com",   "activo": false }
+  ],
+  "tasks": [
+    {
+      "id": "1",
+      "userIds": ["10103", "10104"],
+      "titulo": "Diseñar mockups",
+      "descripcion": "Crear los wireframes del módulo de usuarios",
+      "prioridad": "Alta",
+      "estado": "En Progreso",
+      "fecha_registro": "11 de marzo de 2026, 09:00"
+    },
+    {
+      "id": "2",
+      "userIds": ["10105"],
+      "titulo": "Configurar base de datos",
+      "descripcion": "Instalar y configurar PostgreSQL en el servidor",
+      "prioridad": "Alta",
+      "estado": "Pendiente",
+      "fecha_registro": "11 de marzo de 2026, 10:30"
+    }
+  ]
+}

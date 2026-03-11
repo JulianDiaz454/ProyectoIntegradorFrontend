@@ -130,7 +130,35 @@ body {
 /* ============================================
    HEADER
    ============================================ */
+.container__users {
 
+    height: auto;
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 4px 4px 10px rgba(0,0,0,0.2);
+    border-radius: 8px; 
+    font-size: var(--font-family-mono); 
+    padding: var(--spacing-xl);
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+}
+.user-name{
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+}
+#contenedor-lista-usuarios {
+    position: relative;
+    margin-top: 20px;
+}
+.title{
+  font-size: 18px;
+  margin-top: 10px;
+}
 .header {
     text-align: center;
     margin-bottom: var(--spacing-2xl);
@@ -171,6 +199,16 @@ body {
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
     margin-bottom: var(--spacing-lg);
+}
+.tpl-usuario-agregado{
+  background: var(--color-primary-lighter);
+   padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center; 
+  border-left: 4px solid var(--color-success);
 }
 
 /* ============================================
@@ -309,7 +347,15 @@ body {
     text-decoration: none;
     white-space: nowrap;
 }
-
+.btn-remove{
+  background: var(--color-error); 
+  border: none; 
+  padding: 8px; 
+  border-radius: var(--spacing-sm);
+  cursor: pointer; 
+  font-weight: bold;
+  margin-left: 10px;
+}
 .btn--primary {
     background-color: var(--color-primary);
     color: white;
@@ -348,6 +394,10 @@ body {
     background-color: var(--color-info);
     color: white;
     box-shadow: var(--shadow-md);
+}
+.container__button{
+  display: flex;
+  gap: var(--spacing-xl);
 }
 /* ============================================
    SECCIÓN DE MENSAJES

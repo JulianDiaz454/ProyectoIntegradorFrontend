@@ -25,7 +25,9 @@ const emptyTasksState = document.getElementById('emptyTasks');
 const searchError = document.getElementById('searchError');
 const contenedorOrden = document.getElementById('ordenContainer');
 const contenedorFiltros = document.getElementById('filtrosContainer');
-
+const btnAddUser = document.querySelectorAll('#searchBtn')[1]; 
+const listaUsuarios = document.getElementById('listaUsuariosAgregados');
+const tplUsuario = document.getElementById('tpl-usuario-agregado').content;
 // RF04 – referencia al botón exportar
 const btnExportar = document.getElementById('btnExportar');
 
@@ -37,6 +39,7 @@ let editTaskId = null;
 let tareasActuales = [];
 let controlesFiltro = null;
 let controlesOrden = null;
+let usuariosAsignados = [];
 
 // --- Utilidades ---
 function updateMessageCount() {
@@ -173,7 +176,7 @@ searchForm.addEventListener('submit', async (e) => {
         if (!res.ok) throw new Error("Usuario no encontrado");
 
         const user = await res.json();
-        currentUser = user;
+        currentUser = user; 
 
         userInfoSection.classList.remove('hidden');
         taskSection.classList.remove('hidden');
@@ -181,14 +184,12 @@ searchForm.addEventListener('submit', async (e) => {
         document.getElementById('infoNombre').textContent = user.nombre_completo || user.name || "N/A";
         document.getElementById('infoCorreo').textContent = user.correo || user.email || "N/A";
 
-        limpiarTareas();
-        await renderTareasUsuario(user.id);
-        resetForm();
-        notificarInfo(`Usuario ${user.nombre_completo || user.name} cargado.`);
+        limpiarTareas(); 
+        notificarInfo(`Usuario ${user.name} seleccionado.`);
     } catch (error) {
         userInfoSection.classList.add('hidden');
         taskSection.classList.add('hidden');
-        searchError.textContent = "Usuario no encontrado en el sistema";
+        searchError.textContent = "Usuario no encontrado";
         notificarError('No se encontró el usuario.');
     }
 });
@@ -227,4 +228,83 @@ tasksContainer.addEventListener('click', async (e) => {
     const id = e.target.dataset.id;
     if (e.target.classList.contains('btn-eliminar')) await processEliminar(id);
     if (e.target.classList.contains('btn-editar')) prepararEdicion(e.target.closest('.task-card'));
+});
+
+// --- Evento: Añadir a la lista de la derecha ---
+btnAddUser.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const doc = userDocInput.value.trim();
+    if (!doc) return;
+
+    try {
+        const res = await fetch(`${api_url}/users/${doc}`);
+        const userFound = await res.json();
+
+        if (usuariosAsignados.some(u => u.id === userFound.id)) {
+            return notificarInfo("El usuario ya está en la lista.");
+        }
+
+        usuariosAsignados.push(userFound);
+
+        const nuevaTarjeta = tplUsuario.cloneNode(true);
+        nuevaTarjeta.querySelector('.user-name').textContent = userFound.name;
+        
+        nuevaTarjeta.querySelector('.btn-remove').onclick = (ev) => {
+            usuariosAsignados = usuariosAsignados.filter(u => u.id !== userFound.id);
+            ev.target.closest('.user-card-mini').remove();
+        };
+
+        listaUsuarios.appendChild(nuevaTarjeta);
+        userDocInput.value = "";
+        notificarExito("Usuario añadido a la lista de asignación.");
+    } catch (err) {
+        notificarError("No se pudo añadir al usuario.");
+    }
+});
+
+// --- Evento: Enviar tarea a todos los usuarios ingresados en la tarea ---
+
+function limpiarListaVisualUsuarios() {
+    // Seleccionamos todas las tarjetas de usuario
+    const tarjetas = listaUsuarios.querySelectorAll('.user-card-mini');
+    tarjetas.forEach(tarjeta => tarjeta.remove());
+}
+taskForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const todosLosIds = usuariosAsignados.map(u => u.id);
+    if (currentUser && !todosLosIds.includes(currentUser.id)) {
+        todosLosIds.push(currentUser.id);
+    }
+
+    if (todosLosIds.length === 0) {
+        return notificarError("No hay usuarios para asignar.");
+    }
+
+    const taskData = {
+        titulo: document.getElementById('taskTitle').value,
+        descripcion: document.getElementById('taskDesc').value,
+        prioridad: document.getElementById('taskPriority').value,
+        estado: document.getElementById('taskStatus').value,
+        fecha_registro: getCurrentTimestamp()
+    };
+
+    const promesas = todosLosIds.map(id => postTarea(api_url, { ...taskData, userId: id }));
+    const resultados = await Promise.all(promesas);
+
+    if (resultados.every(r => r)) {
+        notificarExito(`Tarea asignada a ${todosLosIds.length} usuarios.`);
+        
+        usuariosAsignados = [];
+        const tarjetas = listaUsuarios.querySelectorAll('.user-card-mini');
+        tarjetas.forEach(t => t.remove());
+
+        resetForm();
+
+        if (currentUser) {
+            await renderTareasUsuario(currentUser.id);
+        }
+    } else {
+        notificarError("Error en la asignación.");
+    }
 });
