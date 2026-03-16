@@ -1,6 +1,4 @@
-// ============================================================
-// IMPORTS*s
-// ============================================================
+
 import { validar, validarConUI, limpiarErrores } from "./service/validacionDocumento.js";
 import { notificarExito, notificarError, notificarInfo } from './service/notificaciones.js';
 import { crearCardTarea, crearCardTareaAdmin } from './ui/tareas.js';
