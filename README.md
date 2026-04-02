@@ -23,7 +23,7 @@
 ### 1. Clonar y ubicarse en la rama correcta
 
 ```bash
-git checkout developer
+git checkout main
 ```
 
 ### 2. Instalar dependencias
