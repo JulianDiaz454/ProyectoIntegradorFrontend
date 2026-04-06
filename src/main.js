@@ -18,39 +18,39 @@ import { exportarTareasJSON } from './service/exportarTareas.js';
 // ============================================================
 // ESTADO GLOBAL
 // ============================================================
-let currentUser     = null;
-let totalTasks      = 0;
-let tareasActuales  = [];   // tareas del usuario activo (panel usuario)
+let currentUser = null;
+let totalTasks = 0;
+let tareasActuales = [];   // tareas del usuario activo (panel usuario)
 let controlesFiltro = null;
-let controlesOrden  = null;
+let controlesOrden = null;
 
 // Estado panel admin
-let todosUsuarios   = [];
-let todasTareas     = [];
+let todosUsuarios = [];
+let todasTareas = [];
 let editandoTareaAdmin = false;
-let editTareaAdminId   = null;
-let editandoUser    = false;
-let editUserId      = null;
+let editTareaAdminId = null;
+let editandoUser = false;
+let editUserId = null;
 
 // ============================================================
 // SELECTORES DOM — Panel Usuario (igual que el original)
 // ============================================================
-const searchForm      = document.getElementById('searchForm');
-const userDocInput    = document.getElementById('userDoc');
+const searchForm = document.getElementById('searchForm');
+const userDocInput = document.getElementById('userDoc');
 const userInfoSection = document.getElementById('userInfo');
-const tasksContainer  = document.getElementById('tasksContainer');
-const taskCountLabel  = document.getElementById('taskCount');
+const tasksContainer = document.getElementById('tasksContainer');
+const taskCountLabel = document.getElementById('taskCount');
 const emptyTasksState = document.getElementById('emptyTasks');
-const searchError     = document.getElementById('searchError');
-const contenedorOrden    = document.getElementById('ordenContainer');
-const contenedorFiltros  = document.getElementById('filtrosContainer');
-const btnExportar        = document.getElementById('btnExportar');
+const searchError = document.getElementById('searchError');
+const contenedorOrden = document.getElementById('ordenContainer');
+const contenedorFiltros = document.getElementById('filtrosContainer');
+const btnExportar = document.getElementById('btnExportar');
 
 // Selectores panel admin
-const btnAbrirAdmin    = document.getElementById('btnAbrirAdmin');
-const btnCerrarAdmin   = document.getElementById('btnCerrarAdmin');
-const panelAdmin       = document.getElementById('panelAdmin');
-const panelUsuario     = document.getElementById('panelUsuario');
+const btnAbrirAdmin = document.getElementById('btnAbrirAdmin');
+const btnCerrarAdmin = document.getElementById('btnCerrarAdmin');
+const panelAdmin = document.getElementById('panelAdmin');
+const panelUsuario = document.getElementById('panelUsuario');
 
 // ============================================================
 // UTILIDADES — exactas del original
@@ -59,7 +59,7 @@ function updateMessageCount() {
     taskCountLabel.textContent = `${totalTasks} ${totalTasks === 1 ? 'tarea' : 'tareas'}`;
 }
 function hideEmptyState() { if (emptyTasksState) emptyTasksState.classList.add('hidden'); }
-function showEmptyState()  { if (emptyTasksState) emptyTasksState.classList.remove('hidden'); }
+function showEmptyState() { if (emptyTasksState) emptyTasksState.classList.remove('hidden'); }
 
 function getCurrentTimestamp() {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
@@ -95,7 +95,7 @@ function renderizarTareas(tareas) {
 async function renderTareasUsuario(userId) {
     tareasActuales = await getTareas(api_url, userId);
     if (controlesFiltro) controlesFiltro.chequearYActivar();
-    if (controlesOrden)  controlesOrden.chequearYActivar();
+    if (controlesOrden) controlesOrden.chequearYActivar();
     renderizarTareas(tareasActuales);
 }
 
@@ -182,7 +182,7 @@ searchForm.addEventListener('submit', async (e) => {
 // Cambiar estado desde select en la card del usuario
 tasksContainer.addEventListener('change', async (e) => {
     if (!e.target.classList.contains('select-estado')) return;
-    const id     = e.target.dataset.id;
+    const id = e.target.dataset.id;
     const estado = e.target.value;
     const ok = await actualizarEstadoTarea(api_url, id, estado);
     if (ok) {
@@ -218,9 +218,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById(btn.dataset.tab).classList.add('active');
-        if (btn.dataset.tab === 'tab-admin-tareas')  { resetAdminTaskForm(); cargarTareasAdmin(); }
+        if (btn.dataset.tab === 'tab-admin-tareas') { resetAdminTaskForm(); cargarTareasAdmin(); }
         if (btn.dataset.tab === 'tab-admin-usuarios') { resetUserForm(); cargarUsuariosAdmin(); }
-        if (btn.dataset.tab === 'tab-dashboard')       cargarDashboard();
+        if (btn.dataset.tab === 'tab-dashboard') cargarDashboard();
     });
 });
 
@@ -243,11 +243,11 @@ async function cargarDashboard() {
             getUsuarios(api_url)
         ]);
         const stats = [
-            { num: tasks.length,                             label: 'Total Tareas',   clase: 'stat--primary' },
-            { num: tasks.filter(t => t.estado === 'Pendiente').length,   label: 'Pendientes',     clase: 'stat--warning' },
-            { num: tasks.filter(t => t.estado === 'En Progreso').length, label: 'En Progreso',    clase: 'stat--info' },
-            { num: tasks.filter(t => t.estado === 'Completada').length,  label: 'Completadas',    clase: 'stat--success' },
-            { num: tasks.filter(t => t.prioridad === 'Alta').length,     label: 'Alta Prioridad', clase: 'stat--danger' },
+            { num: tasks.length, label: 'Total Tareas', clase: 'stat--primary' },
+            { num: tasks.filter(t => t.estado === 'Pendiente').length, label: 'Pendientes', clase: 'stat--warning' },
+            { num: tasks.filter(t => t.estado === 'En Progreso').length, label: 'En Progreso', clase: 'stat--info' },
+            { num: tasks.filter(t => t.estado === 'Completada').length, label: 'Completadas', clase: 'stat--success' },
+            { num: tasks.filter(t => t.prioridad === 'Alta').length, label: 'Alta Prioridad', clase: 'stat--danger' },
             { num: `${users.filter(u => u.activo).length}/${users.length}`, label: 'Usuarios Activos', clase: 'stat--neutral' }
         ];
         stats.forEach(s => {
@@ -275,14 +275,14 @@ async function cargarTareasAdmin() {
     lista.innerHTML = '';
     if (todosUsuarios.length === 0) todosUsuarios = await getUsuarios(api_url);
     todasTareas = await getTodasLasTareas(api_url);
-    const estado    = document.getElementById('filtroAdminEstado')?.value || '';
+    const estado = document.getElementById('filtroAdminEstado')?.value || '';
     const prioridad = document.getElementById('filtroAdminPrioridad')?.value || '';
-    const userId    = document.getElementById('filtroAdminUser')?.value?.trim() || '';
+    const userId = document.getElementById('filtroAdminUser')?.value?.trim() || '';
 
     let result = [...todasTareas];
-    if (estado)    result = result.filter(t => t.estado    === estado);
+    if (estado) result = result.filter(t => t.estado === estado);
     if (prioridad) result = result.filter(t => t.prioridad === prioridad);
-    if (userId)    result = result.filter(t => (t.userIds || []).includes(String(userId)));
+    if (userId) result = result.filter(t => (t.userIds || []).includes(String(userId)));
 
     const contador = document.getElementById('adminTaskCount');
     if (contador) contador.textContent = result.length;
@@ -346,10 +346,10 @@ document.getElementById('adminTaskForm')?.addEventListener('submit', async (e) =
     if (userIds.length === 0) { notificarError('Selecciona al menos un usuario'); return; }
     const datos = {
         userIds,
-        titulo:         document.getElementById('adminTaskTitulo').value.trim(),
-        descripcion:    document.getElementById('adminTaskDesc').value.trim(),
-        estado:         document.getElementById('adminTaskEstado').value,
-        prioridad:      document.getElementById('adminTaskPrioridad').value,
+        titulo: document.getElementById('adminTaskTitulo').value.trim(),
+        descripcion: document.getElementById('adminTaskDesc').value.trim(),
+        estado: document.getElementById('adminTaskEstado').value,
+        prioridad: document.getElementById('adminTaskPrioridad').value,
         fecha_registro: getCurrentTimestamp()
     };
     try {
@@ -389,11 +389,11 @@ document.getElementById('adminTasksList')?.addEventListener('click', async (e) =
         if (!t) return;
         editandoTareaAdmin = true; editTareaAdminId = id;
         document.getElementById('adminTaskFormTitle').textContent = '✏️ Editar Tarea';
-        document.getElementById('adminTaskBtnLabel').textContent  = 'Guardar Cambios';
+        document.getElementById('adminTaskBtnLabel').textContent = 'Guardar Cambios';
         document.getElementById('btnCancelarAdminTask').classList.remove('hidden');
-        document.getElementById('adminTaskTitulo').value    = t.titulo;
-        document.getElementById('adminTaskDesc').value      = t.descripcion || '';
-        document.getElementById('adminTaskEstado').value    = t.estado;
+        document.getElementById('adminTaskTitulo').value = t.titulo;
+        document.getElementById('adminTaskDesc').value = t.descripcion || '';
+        document.getElementById('adminTaskEstado').value = t.estado;
         document.getElementById('adminTaskPrioridad').value = t.prioridad;
         poblarCheckboxAdmin(t.userIds || []);
         document.getElementById('adminTaskFormCard').scrollIntoView({ behavior: 'smooth' });
@@ -444,7 +444,7 @@ document.getElementById('userAdminForm')?.addEventListener('submit', async (e) =
 
     const datos = {
         nombre_completo: document.getElementById('adminUserNombre').value.trim(),
-        correo:          document.getElementById('adminUserCorreo').value.trim()
+        correo: document.getElementById('adminUserCorreo').value.trim()
     };
     try {
         if (editandoUser) {
@@ -472,7 +472,7 @@ document.getElementById('usersAdminList')?.addEventListener('click', async (e) =
         if (!u) return;
         editandoUser = true; editUserId = id;
         document.getElementById('userAdminFormTitle').textContent = '✏️ Editar Usuario';
-        document.getElementById('userAdminBtnLabel').textContent  = 'Guardar Cambios';
+        document.getElementById('userAdminBtnLabel').textContent = 'Guardar Cambios';
         document.getElementById('btnCancelarUserAdmin').classList.remove('hidden');
         document.getElementById('adminUserNombre').value = u.nombre_completo;
         document.getElementById('adminUserCorreo').value = u.correo;
@@ -489,8 +489,12 @@ document.getElementById('usersAdminList')?.addEventListener('click', async (e) =
 
     if (e.target.classList.contains('btn-eliminar-user')) {
         if (!await confirmar('Esta acción no se puede deshacer.')) return;
-        await eliminarUsuario(api_url, id);
-        notificarExito('Usuario eliminado ✓');
-        await cargarUsuariosAdmin();
+        try {
+            await eliminarUsuario(api_url, id);
+            notificarExito('Usuario eliminado ✓');
+            await cargarUsuariosAdmin();
+        } catch (error) {
+            notificarError(error.message);
+        }
     }
 });

@@ -32,7 +32,11 @@ export const editarUsuario = async (api_url, id, datos) => {
 
 export const eliminarUsuario = async (api_url, id) => {
     const res = await fetch(`${api_url}/users/${id}`, { method: 'DELETE' });
-    return res.ok;
+    if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.message || 'No se pudo eliminar el usuario');
+    }
+    return true;
 };
 
 export const toggleActivoUsuario = async (api_url, id, activo) => {
